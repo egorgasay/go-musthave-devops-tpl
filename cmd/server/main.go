@@ -12,12 +12,13 @@ import (
 func main() {
 	r := gin.Default()
 	cfg := repo.Config{DriverName: "sqlite3", DataSourceName: "devtool.db"}
-	
-	h, err := handlers.NewHandler(cfg)
+
+	strg, err := repo.NewMemStorage(&cfg)
 	if err != nil {
-		log.Fatal(err)
-		return
+		log.Fatalf("Failed to initialize: %s", err.Error())
 	}
+	
+	h := handlers.NewHandler(strg.DB)
 
 	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
 	r.GET("/value/:type/:name", h.GetMetricHandler)

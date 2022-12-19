@@ -2,7 +2,12 @@ module devtool
 
 go 1.19
 
-require github.com/gin-gonic/gin v1.8.1
+require (
+	github.com/gin-gonic/gin v1.8.1
+	github.com/go-resty/resty/v2 v2.7.0
+	github.com/mattn/go-sqlite3 v1.14.16
+	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
+)
 
 require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -13,7 +18,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
-	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect

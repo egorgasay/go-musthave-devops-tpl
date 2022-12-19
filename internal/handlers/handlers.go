@@ -13,13 +13,8 @@ type Handler struct {
 	services *service.Service
 }
 
-func NewHandler(cfg repo.Config) (*Handler, error) {
-	srv, err := service.NewService(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Handler{services: srv}, nil
+func NewHandler(db repo.IMemStorage) *Handler {
+	return &Handler{services: service.NewService(db)}
 }
 
 func (h Handler) UpdateMetricHandler(c *gin.Context) {
@@ -38,7 +33,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 		Value: val,
 	}
 
-	err = h.services.DB.UpdateMetric(mt)
+	err = h.services.IService.UpdateMetric(mt)
 	if err != nil {
 		c.AbortWithStatusJSON(404, err.Error())
 		return
@@ -48,7 +43,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetMetricHandler(c *gin.Context) {
-	val, err := h.services.DB.GetMetric(c.Param("name"))
+	val, err := h.services.IService.GetMetric(c.Param("name"))
 	if err != nil {
 		c.AbortWithError(404, err)
 		return
@@ -61,7 +56,7 @@ func (h Handler) GetMetricHandler(c *gin.Context) {
 func (h Handler) GetAllMetricsHandler(c *gin.Context) {
 	var mt []repo.Metrics
 
-	err := h.services.DB.GetAllMetrics(mt)
+	err := h.services.IService.GetAllMetrics(mt)
 	if err != nil {
 		c.AbortWithError(500, err)
 		return

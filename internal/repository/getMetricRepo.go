@@ -4,7 +4,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (ms MemStorage) GetMetric(name string) (float64, error) {
+func (ms MemStorageMethods) GetMetric(name string) (float64, error) {
 	query := "SELECT value FROM metrics WHERE name = ?;"
 	row := ms.DB.QueryRow(query, name)
 

@@ -36,13 +36,10 @@ type Metrics struct {
 	Name  string
 	Value float64
 }
+type MemStorageMethods struct {
+	DB IMemStorage
+}
 
-// type IStorage interface {
-// 	UpdateMetric(Metrics) error
-// 	GetMetric(string) (float64, error)
-// 	GetAllMetrics([]Metrics) error
-// }
-
-// type Storage struct {
-// 	db IMemStorage
-// }
+func NewMemStorageMethods(ms IMemStorage) *MemStorageMethods {
+	return &MemStorageMethods{DB: ms}
+}

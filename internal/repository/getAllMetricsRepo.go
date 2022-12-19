@@ -1,6 +1,6 @@
 package repository
 
 // TODO: implement
-func (ms MemStorage) GetAllMetrics(mt []Metrics) error {
+func (ms MemStorageMethods) GetAllMetrics(mt []Metrics) error {
 	return nil
 }

@@ -2,35 +2,43 @@ package repository
 
 import (
 	"errors"
-	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 
 func (ms MemStorageMethods) UpdateMetric(mt *Metrics) (err error) {
-	var status sql.Result
 	if mt.Type == "gauge" {
 		queryUpdate :=
-			`UPDATE metrics 
+			`INSERT OR IGNORE INTO metrics(name, value) VALUES(?, 0);
+		UPDATE metrics 
 		SET value = ? 
 		WHERE name = ?;`
 
-		status, err = ms.DB.Exec(queryUpdate, mt.Value, mt.Name)
+		_, err = ms.DB.Exec(queryUpdate, mt.Name, mt.Value, mt.Name)
 	} else if mt.Type == "counter" {
 		queryIncrement :=
-			`UPDATE metrics 
+			`INSERT OR IGNORE INTO metrics(name, value) VALUES(?, 0);
+		UPDATE metrics 
 		SET value = ? + (SELECT value FROM metrics WHERE name = ?)
 		WHERE name = ?;`
 
-		status, err = ms.DB.Exec(queryIncrement, mt.Value, mt.Name, mt.Name)
+		_, err = ms.DB.Exec(queryIncrement, mt.Name, mt.Value, mt.Name, mt.Name)
 	} else {
 		return errors.New("метрики не существует")
 	}
-
-	if st, _ := status.RowsAffected(); st == 0 || err != nil {
-		return errors.New("ошибка при обновлении "+err.Error())
-	}
 	
-	return nil
+	return err
 }
+
+
+
+
+// if st, _ := status.RowsAffected(); st == 0 {
+// 	queryCreate :=
+// 		`UPDATE metrics 
+// 	SET value = ? 
+// 	WHERE name = ?;`
+
+// 	status, err = ms.DB.Exec(queryCreate, mt.Value, mt.Name)
+// }

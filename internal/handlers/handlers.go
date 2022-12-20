@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,6 +20,13 @@ func NewHandler(db repo.IMemStorage) *Handler {
 
 func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	valStr := c.Param("value")
+	if valStr == "" {
+		// c.Error(err)
+		c.AbortWithStatus(400)
+
+		return
+	}
+
 	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
 		c.Error(err)
@@ -27,8 +35,16 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 		return
 	}
 
+	metricType := c.Param("type")
+	if metricType == "" || !strings.Contains("gauge,counter", metricType) { 
+		// c.Error(err)
+		c.AbortWithStatus(501)
+
+		return
+	}
+
 	mt := &repo.Metrics{
-		Type:  c.Param("type"),
+		Type:  metricType,
 		Name:  c.Param("name"),
 		Value: val,
 	}

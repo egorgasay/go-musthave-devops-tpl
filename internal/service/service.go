@@ -6,40 +6,38 @@ import (
 	repo "devtool/internal/repository"
 )
 
+// type Service struct {
+// 	UpdateMetric
+// 	GetMetric
+// 	GetAllMetrics
+// }
+
+type IService interface {
+	UpdateMetric(*repo.Metrics) error
+	GetMetric(string) (float64, error)
+	GetAllMetrics() ([]*repo.Metrics, error)
+}
+
 type Service struct {
-	UpdateMetric
-	GetMetric
-	GetAllMetrics
+	DB IService
 }
 
 func NewService(db *repo.MemStorage) *Service {
-	return &Service{UpdateMetric: db,
-		GetMetric:     db,
-		GetAllMetrics: db}
+	return &Service{DB: db}
 }
 
 type Metrics repo.Metrics
 
-//type IService interface {
-//	UpdateMetric(*repo.Metrics) error
-//	GetMetric(string) (float64, error)
-//	GetAllMetrics([]repo.Metrics) error
-//}
+// type UpdateMetric interface {
+// 	UpdateMetric(*repo.Metrics) error
+// }
 
-type UpdateMetric interface {
-	UpdateMetric(*repo.Metrics) error
-}
+// type GetMetric interface {
+// 	GetMetric(string) (float64, error)
+// }
 
-type GetMetric interface {
-	GetMetric(string) (float64, error)
-}
-
-type GetAllMetrics interface {
-	GetAllMetrics([]repo.Metrics) error
-}
-
-// type Storage struct {
-// 	DB IStorage
+// type GetAllMetrics interface {
+// 	GetAllMetrics([]repo.Metrics) error
 // }
 
 // type UpdateMetric interface {

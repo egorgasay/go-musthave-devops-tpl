@@ -12,6 +12,7 @@ type Config struct {
 type IMemStorage interface {
 	Ping() error
 	Close() error
+	Query(string, ...any) (*sql.Rows, error)
 	Exec(string, ...any) (sql.Result, error)
 	QueryRow(string, ...any) *sql.Row
 }

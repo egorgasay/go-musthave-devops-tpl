@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -48,7 +49,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 		Value: val,
 	}
 
-	err = h.services.UpdateMetric.UpdateMetric(mt)
+	err = h.services.DB.UpdateMetric(mt)
 	if err != nil {
 		c.AbortWithStatusJSON(404, err.Error())
 		return
@@ -58,7 +59,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetMetricHandler(c *gin.Context) {
-	val, err := h.services.GetMetric.GetMetric(c.Param("name"))
+	val, err := h.services.DB.GetMetric(c.Param("name"))
 	if err != nil {
 		c.AbortWithError(404, err)
 		return
@@ -69,18 +70,18 @@ func (h Handler) GetMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetAllMetricsHandler(c *gin.Context) {
-	var mt []repo.Metrics
-
-	err := h.services.GetAllMetrics.GetAllMetrics(mt)
+	mt, err := h.services.DB.GetAllMetrics()
 	if err != nil {
 		c.AbortWithError(500, err)
 		return
 	}
 
-	// нужно пройтись по списку и вывести все метрики в html
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Title":   "All metrics",
+		"Metrics": mt,
+	})
 }
 
 func (h Handler) CustomNotFound(c *gin.Context) {
 	c.JSON(404, gin.H{"message": "Page not found"})
-	return
 }

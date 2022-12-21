@@ -14,7 +14,7 @@ import (
 )
 
 func TestHandler_UpdateMetric(t *testing.T) {
-	type mockBehavior func(r *service_mocks.MockUpdateMetric)
+	type mockBehavior func(r *service_mocks.MockIService)
 
 	tests := []struct {
 		name               string
@@ -25,7 +25,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "Ok",
 			url:  "http://localhost:8080/update/gauge/Alloc/6.0",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "Alloc", Type: "gauge", Value: 6.0}).
 					Return(nil).AnyTimes()
 			},
@@ -34,7 +34,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "Ok, but value doesn't exist yet",
 			url:  "http://localhost:8080/update/gauge/AllocNew/36.0",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "AllocNew", Type: "gauge", Value: 36.0}).
 					Return(nil).AnyTimes()
 			},
@@ -43,7 +43,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "не определен",
 			url:  "http://localhost:8080/update/gauge2/AllocNew/36.0",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "AllocNew", Type: "gauge2", Value: 36.0}).
 					Return(errors.New("тип не определен")).AnyTimes()
 			},
@@ -52,7 +52,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "404",
 			url:  "http://localhost:8080/update/gauge",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
 					Return(nil).AnyTimes()
 			},
@@ -61,7 +61,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "no value",
 			url:  "http://localhost:8080/update/gauge/Alloc/",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
 					Return(nil).AnyTimes()
 			},
@@ -70,7 +70,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		{
 			name: "wrong value type",
 			url:  "http://localhost:8080/update/gauge/Alloc/664q",
-			mockBehavior: func(r *service_mocks.MockUpdateMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
 					Return(nil).AnyTimes()
 			},
@@ -82,10 +82,10 @@ func TestHandler_UpdateMetric(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
-			repo := service_mocks.NewMockUpdateMetric(c)
-			test.mockBehavior(repo)
+			repos := service_mocks.NewMockIService(c)
+			test.mockBehavior(repos)
 
-			services := &service.Service{UpdateMetric: repo}
+			services := &service.Service{DB: repos}
 			handler := Handler{services}
 
 			req := httptest.NewRequest("POST", test.url,
@@ -105,7 +105,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 }
 
 func TestHandler_GetMetric(t *testing.T) {
-	type mockBehavior func(r *service_mocks.MockGetMetric)
+	type mockBehavior func(r *service_mocks.MockIService)
 
 	tests := []struct {
 		name               string
@@ -117,7 +117,7 @@ func TestHandler_GetMetric(t *testing.T) {
 		{
 			name: "Ok",
 			url:  "http://localhost:8080/value/gauge/Alloc",
-			mockBehavior: func(r *service_mocks.MockGetMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().GetMetric("Alloc").
 					Return(6.0, nil).AnyTimes()
 			},
@@ -127,9 +127,10 @@ func TestHandler_GetMetric(t *testing.T) {
 		{
 			name: "404 can't find value by name",
 			url:  "http://localhost:8080/value/gauge/Alqweloc",
-			mockBehavior: func(r *service_mocks.MockGetMetric) {
+			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().GetMetric("Alqweloc").
-					Return(0.0, errors.New("значение не установлено")).AnyTimes()
+					Return(0.0, errors.New("значение не установлено")).
+					AnyTimes()
 			},
 			expectedStatusCode: 404,
 			expectedBody:       "",
@@ -140,10 +141,10 @@ func TestHandler_GetMetric(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
-			repo := service_mocks.NewMockGetMetric(c)
-			test.mockBehavior(repo)
+			repos := service_mocks.NewMockIService(c)
+			test.mockBehavior(repos)
 
-			services := &service.Service{GetMetric: repo}
+			services := &service.Service{DB: repos}
 			handler := Handler{services}
 
 			req := httptest.NewRequest("GET", test.url,
@@ -161,6 +162,58 @@ func TestHandler_GetMetric(t *testing.T) {
 		})
 	}
 }
+
+//func TestHandler_GetAllMetric(t *testing.T) {
+//	type mockBehavior func(r *service_mocks.MockIService)
+//	testOk := []*repo.Metrics{{Type: "Test", Name: "Alloc", Value: 555},
+//		{Type: "Test", Name: "BuckHashSys", Value: 123}}
+//	testOkBody, err := ioutil.ReadFile("index_test.html")
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	tests := []struct {
+//		name               string
+//		url                string
+//		mockBehavior       mockBehavior
+//		expectedStatusCode int
+//		expectedBody       string
+//	}{
+//		{
+//			name: "Get all",
+//			url:  "http://127.0.0.1:8080/",
+//			mockBehavior: func(r *service_mocks.MockIService) {
+//				r.EXPECT().GetAllMetrics().
+//					Return(testOk, nil).AnyTimes()
+//			},
+//			expectedStatusCode: 200,
+//			expectedBody:       string(testOkBody),
+//		},
+//	}
+//	for _, test := range tests {
+//		t.Run(test.name, func(t *testing.T) {
+//			c := gomock.NewController(t)
+//			defer c.Finish()
+//			repo := service_mocks.NewMockIService(c)
+//			test.mockBehavior(repo)
+//
+//			services := &service.Service{DB: repo}
+//			handler := Handler{services}
+//
+//			req := httptest.NewRequest("GET", test.url,
+//				bytes.NewBufferString(""))
+//			w := httptest.NewRecorder()
+//			//определяем хендлер
+//			router := gin.Default()
+//			router.GET("/", handler.GetAllMetricsHandler)
+//			//router.Use(handler.GetAllMetricsHandler)
+//
+//			router.ServeHTTP(w, req)
+//			// Assert
+//			assert.Equal(t, test.expectedStatusCode, w.Code)
+//			assert.Equal(t, test.expectedBody, w.Body.String())
+//		})
+//	}
+//}
 
 // for tests without mocks
 //errRedirectBlocked := errors.New("HTTP redirect blocked")

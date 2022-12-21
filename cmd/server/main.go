@@ -22,6 +22,8 @@ func main() {
 
 	h := handlers.NewHandler(storage)
 
+	r.LoadHTMLGlob("templates/*")
+
 	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
 	r.GET("/value/:type/:name", h.GetMetricHandler)
 	r.GET("/", h.GetAllMetricsHandler)

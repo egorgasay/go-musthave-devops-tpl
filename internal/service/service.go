@@ -1,22 +1,40 @@
 package service
 
+//go:generate mockgen -source=service.go -destination=mocks/mock.go
+
 import (
 	repo "devtool/internal/repository"
 )
 
 type Service struct {
-	IService
+	UpdateMetric
+	GetMetric
+	GetAllMetrics
 }
 
-func NewService(ms repo.IMemStorage) *Service {
-	return &Service{IService: repo.NewMemStorageMethods(ms)}
+func NewService(db *repo.MemStorage) *Service {
+	return &Service{UpdateMetric: db,
+		GetMetric:     db,
+		GetAllMetrics: db}
 }
 
 type Metrics repo.Metrics
 
-type IService interface {
+//type IService interface {
+//	UpdateMetric(*repo.Metrics) error
+//	GetMetric(string) (float64, error)
+//	GetAllMetrics([]repo.Metrics) error
+//}
+
+type UpdateMetric interface {
 	UpdateMetric(*repo.Metrics) error
+}
+
+type GetMetric interface {
 	GetMetric(string) (float64, error)
+}
+
+type GetAllMetrics interface {
 	GetAllMetrics([]repo.Metrics) error
 }
 

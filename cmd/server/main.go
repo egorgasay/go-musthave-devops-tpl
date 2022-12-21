@@ -12,19 +12,20 @@ import (
 
 func main() {
 	r := gin.Default()
-	
+
 	cfg := config.New()
-	strg, err := repo.NewMemStorage(cfg.DBConfig)
+	storage, err := repo.NewMemStorage(cfg.DBConfig)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize: %s", err.Error())
 	}
 
-	h := handlers.NewHandler(strg.DB)
+	h := handlers.NewHandler(storage)
 
 	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
 	r.GET("/value/:type/:name", h.GetMetricHandler)
 	r.GET("/", h.GetAllMetricsHandler)
+	r.POST("/update/:type/", h.CustomNotFound)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

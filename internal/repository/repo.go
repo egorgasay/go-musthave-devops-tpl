@@ -40,6 +40,6 @@ type MemStorageMethods struct {
 	DB IMemStorage
 }
 
-func NewMemStorageMethods(ms IMemStorage) *MemStorageMethods {
-	return &MemStorageMethods{DB: ms}
-}
+//func NewMemStorageMethods(ms IMemStorage) *MemStorageMethods {
+//	return &MemStorageMethods{DB: ms}
+//}

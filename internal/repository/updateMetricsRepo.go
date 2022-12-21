@@ -6,8 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
-func (ms MemStorageMethods) UpdateMetric(mt *Metrics) (err error) {
+func (ms MemStorage) UpdateMetric(mt *Metrics) (err error) {
 	if mt.Type == "gauge" {
 		queryUpdate :=
 			`INSERT OR IGNORE INTO metrics(name, value) VALUES(?, 0);
@@ -25,19 +24,16 @@ func (ms MemStorageMethods) UpdateMetric(mt *Metrics) (err error) {
 
 		_, err = ms.DB.Exec(queryIncrement, mt.Name, mt.Value, mt.Name, mt.Name)
 	} else {
-		return errors.New("метрики не существует")
+		return errors.New("тип не определен")
 	}
-	
+
 	return err
 }
 
-
-
-
 // if st, _ := status.RowsAffected(); st == 0 {
 // 	queryCreate :=
-// 		`UPDATE metrics 
-// 	SET value = ? 
+// 		`UPDATE metrics
+// 	SET value = ?
 // 	WHERE name = ?;`
 
 // 	status, err = ms.DB.Exec(queryCreate, mt.Value, mt.Name)

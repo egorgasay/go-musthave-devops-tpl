@@ -14,7 +14,7 @@ type Handler struct {
 	services *service.Service
 }
 
-func NewHandler(db repo.IMemStorage) *Handler {
+func NewHandler(db *repo.MemStorage) *Handler {
 	return &Handler{services: service.NewService(db)}
 }
 
@@ -23,7 +23,6 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	if valStr == "" {
 		// c.Error(err)
 		c.AbortWithStatus(400)
-
 		return
 	}
 
@@ -36,7 +35,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	}
 
 	metricType := c.Param("type")
-	if metricType == "" || !strings.Contains("gauge,counter", metricType) { 
+	if metricType == "" || !strings.Contains("gauge,counter", metricType) {
 		// c.Error(err)
 		c.AbortWithStatus(501)
 
@@ -49,7 +48,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 		Value: val,
 	}
 
-	err = h.services.IService.UpdateMetric(mt)
+	err = h.services.UpdateMetric.UpdateMetric(mt)
 	if err != nil {
 		c.AbortWithStatusJSON(404, err.Error())
 		return
@@ -59,7 +58,7 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetMetricHandler(c *gin.Context) {
-	val, err := h.services.IService.GetMetric(c.Param("name"))
+	val, err := h.services.GetMetric.GetMetric(c.Param("name"))
 	if err != nil {
 		c.AbortWithError(404, err)
 		return
@@ -72,11 +71,16 @@ func (h Handler) GetMetricHandler(c *gin.Context) {
 func (h Handler) GetAllMetricsHandler(c *gin.Context) {
 	var mt []repo.Metrics
 
-	err := h.services.IService.GetAllMetrics(mt)
+	err := h.services.GetAllMetrics.GetAllMetrics(mt)
 	if err != nil {
 		c.AbortWithError(500, err)
 		return
 	}
 
 	// нужно пройтись по списку и вывести все метрики в html
+}
+
+func (h Handler) CustomNotFound(c *gin.Context) {
+	c.JSON(404, gin.H{"message": "Page not found"})
+	return
 }

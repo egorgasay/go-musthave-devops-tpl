@@ -9,6 +9,11 @@ func (ms MemStorage) GetAllMetrics() ([]*Metrics, error) {
 		return mt, err
 	}
 
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
 	for rows.Next() {
 		metric := &Metrics{MType: "Test"}
 

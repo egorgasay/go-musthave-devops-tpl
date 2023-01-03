@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,6 +20,44 @@ type Handler struct {
 
 func NewHandler(db *repo.MemStorage) *Handler {
 	return &Handler{services: service.NewService(db)}
+}
+
+func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
+	var metrics repo.Metrics
+	b, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(400)
+		return
+	}
+
+	err = json.Unmarshal(b, &metrics)
+	if err != nil {
+		c.AbortWithStatus(501)
+		return
+	}
+
+	count, err := h.services.DB.UpdateMetric(&metrics)
+	if err != nil {
+		log.Println(err)
+		c.AbortWithStatusJSON(404, err.Error())
+		return
+	}
+
+	if metrics.MType == "gauge" {
+		metrics.Value = &count
+	} else {
+		delta := int64(count)
+		metrics.Delta = &delta
+	}
+
+	byteJSON, err := json.MarshalIndent(metrics, "", "    ")
+	if err != nil {
+		c.AbortWithStatusJSON(404, err.Error())
+		return
+	}
+
+	c.Status(200)
+	c.Writer.Write(byteJSON)
 }
 
 func (h Handler) UpdateMetricHandler(c *gin.Context) {
@@ -37,19 +78,30 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 
 	metricType := c.Param("type")
 	if metricType == "" || !strings.Contains("gauge,counter", metricType) {
-		// c.Error(err)
 		c.AbortWithStatus(501)
 
 		return
 	}
+	name := c.Param("name")
 
-	mt := &repo.Metrics{
-		Type:  metricType,
-		Name:  c.Param("name"),
-		Value: val,
+	var mt *repo.Metrics
+
+	switch metricType {
+	case "gauge":
+		mt = &repo.Metrics{
+			ID:    name,
+			MType: metricType,
+			Value: &val,
+		}
+	case "counter":
+		mt = &repo.Metrics{
+			ID:    name,
+			MType: metricType,
+			Value: &val,
+		}
 	}
 
-	err = h.services.DB.UpdateMetric(mt)
+	_, err = h.services.DB.UpdateMetric(mt)
 	if err != nil {
 		c.AbortWithStatusJSON(404, err.Error())
 		return

@@ -3,14 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	// "golang.org/x/exp/slices"
 	"math/rand"
 	"reflect"
 	"runtime"
 	"time"
 )
-
-//var counters = []string{"PollCount"}
 
 // var metrics = []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys", "HeapAlloc",
 // 	"HeapIdle", "HeapInuse", "HeapReleased", "HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
@@ -22,24 +19,22 @@ const reportInterval = 10 * time.Second
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
+
 func main() {
-	client := resty.New()
-	urls := make([]string, 29)
 	startReport := time.Now()
-	i := 0
 	for {
+		var requests = make([]*resty.Request, 0, 29)
 		start := time.Now()
 		var mem runtime.MemStats
-		i = 0
 
-		urls[i] = "http://127.0.0.1:8080/update/counter/PollCount/1"
-		i++
-
-		urls[i] = fmt.Sprintf(
-			"http://127.0.0.1:8080/update/gauge/RandomValue/%d",
-			rand.Intn(1000000),
-		)
-		i++
+		requests = makeNewRequest("counter", "PollCount", 1.0, requests)
+		requests = makeNewRequest("gauge", "RandomValue", float64(rand.Intn(1000000)), requests)
 
 		runtime.ReadMemStats(&mem)
 		v := reflect.ValueOf(mem)
@@ -47,33 +42,47 @@ func main() {
 
 		for j := 0; j < v.NumField(); j++ {
 			val := 0.0
-			if !v.Field(j).CanUint() && !v.Field(j).CanFloat(){
+			if !v.Field(j).CanUint() && !v.Field(j).CanFloat() {
 				continue
 			} else if !v.Field(j).CanUint() {
 				val = v.Field(j).Float()
 			} else {
 				val = float64(v.Field(j).Uint())
 			}
-			
+
 			name := tof.Field(j).Name
-			urls[i] = fmt.Sprintf(
-				"http://127.0.0.1:8080/update/gauge/%s/%f",
-				name, val,
-			)
-			i++
+			requests = makeNewRequest("gauge", name, val, requests)
 		}
 		time.Sleep(pollInterval - time.Since(start))
 		if reportInterval-time.Since(startReport) <= 0 {
 			startReport = time.Now()
-			doRequest(urls, client)
+			doRequest(requests)
 		}
 	}
 
 }
 
-func doRequest(urls []string, client *resty.Client) {
+func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
+	cli := resty.New().SetBaseURL("http://localhost:8080/")
+	var mt Metrics
+	if mtype == "gauge" {
+		mt.MType = "gauge"
+		mt.Value = &val
+	} else if mtype == "counter" {
+		mt.MType = "counter"
+		delta := int64(val)
+		mt.Delta = &delta
+	}
+
+	mt.ID = id
+	req := cli.R().SetHeader("Content-Type", "application/json").SetBody(&mt)
+	requests = append(requests, req)
+	return requests
+}
+
+func doRequest(requests []*resty.Request) {
 	fmt.Println("Отправили!")
-	for _, url := range urls {
-		go client.R().Post(url)
+	for _, req := range requests {
+		go req.Post("/update/")
 	}
 }

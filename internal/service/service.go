@@ -13,7 +13,7 @@ import (
 // }
 
 type IService interface {
-	UpdateMetric(*repo.Metrics) error
+	UpdateMetric(*repo.Metrics) (float64, error)
 	GetMetric(string) (float64, error)
 	GetAllMetrics() ([]*repo.Metrics, error)
 }

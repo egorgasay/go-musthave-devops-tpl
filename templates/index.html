@@ -20,8 +20,12 @@
     <tbody>
     {{range .Metrics }}
     <tr>
-        <td style="color: #000000">{{ .Name }}</td>
+        <td style="color: #000000">{{ .ID }}</td>
+        {{ if .Value }}
         <td style="color: #000000">{{ .Value }}</td>
+        {{ else }}
+        <td style="color: #000000">{{ .Delta }}</td>
+        {{ end }}
     </tr>
     {{end}}
     </tbody>

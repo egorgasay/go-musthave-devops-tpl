@@ -15,6 +15,7 @@ import (
 
 func TestHandler_UpdateMetric(t *testing.T) {
 	type mockBehavior func(r *service_mocks.MockIService)
+	fval := float64(6)
 
 	tests := []struct {
 		name               string
@@ -26,25 +27,25 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "Ok",
 			url:  "http://localhost:8080/update/gauge/Alloc/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "Alloc", Type: "gauge", Value: 6.0}).
+				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "Alloc", MType: "gauge", Value: &fval}).
 					Return(nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
 		},
 		{
 			name: "Ok, but value doesn't exist yet",
-			url:  "http://localhost:8080/update/gauge/AllocNew/36.0",
+			url:  "http://localhost:8080/update/gauge/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "AllocNew", Type: "gauge", Value: 36.0}).
+				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge", Value: &fval}).
 					Return(nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
 		},
 		{
 			name: "не определен",
-			url:  "http://localhost:8080/update/gauge2/AllocNew/36.0",
+			url:  "http://localhost:8080/update/gauge2/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{Name: "AllocNew", Type: "gauge2", Value: 36.0}).
+				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge2", Value: &fval}).
 					Return(errors.New("тип не определен")).AnyTimes()
 			},
 			expectedStatusCode: 501,

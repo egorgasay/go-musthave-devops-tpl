@@ -24,6 +24,7 @@ func main() {
 
 	r.LoadHTMLGlob("templates/*")
 
+	r.POST("/update/", h.UpdateMetricByJSONHandler)
 	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
 	r.GET("/value/:type/:name", h.GetMetricHandler)
 	r.GET("/", h.GetAllMetricsHandler)

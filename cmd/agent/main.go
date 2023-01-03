@@ -18,7 +18,7 @@ import (
 
 var pollInterval = 2 * time.Second
 var reportInterval = 10 * time.Second
-var baseURL = "http://localhost:8080/"
+var baseURL = "localhost:8080"
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 
@@ -49,6 +49,8 @@ func main() {
 			pollInterval = time.Duration(sec) * time.Second
 		}
 	}
+
+	fmt.Println(pollInterval, reportInterval, baseURL)
 
 	for {
 		var requests = make([]*resty.Request, 0, 29)
@@ -85,7 +87,7 @@ func main() {
 }
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
-	cli := resty.New().SetBaseURL(baseURL)
+	cli := resty.New().SetBaseURL("http://" + baseURL)
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"

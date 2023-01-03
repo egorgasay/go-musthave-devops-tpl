@@ -16,6 +16,7 @@ func (ms MemStorage) GetAllMetrics() ([]*Metrics, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		mt = append(mt, metric)
 	}
 

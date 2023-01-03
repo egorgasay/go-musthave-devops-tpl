@@ -28,7 +28,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge/Alloc/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "Alloc", MType: "gauge", Value: &fval}).
-					Return(nil).AnyTimes()
+					Return(fval, nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
 		},
@@ -37,7 +37,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge", Value: &fval}).
-					Return(nil).AnyTimes()
+					Return(fval, nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
 		},
@@ -46,7 +46,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge2/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge2", Value: &fval}).
-					Return(errors.New("тип не определен")).AnyTimes()
+					Return(fval, errors.New("тип не определен")).AnyTimes()
 			},
 			expectedStatusCode: 501,
 		},
@@ -55,7 +55,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
-					Return(nil).AnyTimes()
+					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 404,
 		},
@@ -64,7 +64,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge/Alloc/",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
-					Return(nil).AnyTimes()
+					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 404,
 		},
@@ -73,7 +73,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			url:  "http://localhost:8080/update/gauge/Alloc/664q",
 			mockBehavior: func(r *service_mocks.MockIService) {
 				r.EXPECT().UpdateMetric(&repo.Metrics{}).
-					Return(nil).AnyTimes()
+					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 400,
 		},

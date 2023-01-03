@@ -14,8 +14,8 @@ import (
 // 	"MSpanInuse", "MSpanSys", "Mallocs", "NextGC", "NumForcedGC", "NumGC", "OtherSys", "PauseTotalNs",
 // 	"PollCount", "RandomValue", "StackInuse", "StackSys", "Sys", "TotalAlloc"}
 
-const pollInterval = 2 * time.Second
-const reportInterval = 10 * time.Second
+var pollInterval = 2 * time.Second
+var reportInterval = 10 * time.Second
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 

@@ -27,6 +27,7 @@ func main() {
 	r.POST("/update/", h.UpdateMetricByJSONHandler)
 	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
 	r.GET("/value/:type/:name", h.GetMetricHandler)
+	r.GET("/value/", h.GetMetricByJSONHandler)
 	r.GET("/", h.GetAllMetricsHandler)
 	r.POST("/update/:type/", h.CustomNotFound)
 

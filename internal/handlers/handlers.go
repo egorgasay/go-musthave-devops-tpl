@@ -26,20 +26,20 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 	var metrics repo.Metrics
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		c.AbortWithStatus(501)
+		c.AbortWithStatus(http.StatusNotImplemented)
 		return
 	}
 
 	count, err := h.services.DB.UpdateMetric(&metrics)
 	if err != nil {
 		log.Println(err)
-		c.AbortWithStatusJSON(404, err.Error())
+		c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -52,11 +52,11 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 
 	byteJSON, err := json.MarshalIndent(metrics, "", "    ")
 	if err != nil {
-		c.AbortWithStatusJSON(404, err.Error())
+		c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 		return
 	}
 
-	c.Status(200)
+	c.Status(http.StatusOK)
 	c.Writer.Write(byteJSON)
 }
 
@@ -64,21 +64,21 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	valStr := c.Param("value")
 	if valStr == "" {
 		// c.Error(err)
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
 		c.Error(err)
-		c.AbortWithStatus(400)
+		c.AbortWithStatus(http.StatusBadRequest)
 
 		return
 	}
 
 	metricType := c.Param("type")
 	if metricType == "" || !strings.Contains("gauge,counter", metricType) {
-		c.AbortWithStatus(501)
+		c.AbortWithStatus(http.StatusNotImplemented)
 
 		return
 	}
@@ -104,28 +104,69 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 
 	_, err = h.services.DB.UpdateMetric(mt)
 	if err != nil {
-		c.AbortWithStatusJSON(404, err.Error())
+		c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 		return
 	}
 
-	c.Status(200)
+	c.Status(http.StatusOK)
 }
 
 func (h Handler) GetMetricHandler(c *gin.Context) {
 	val, err := h.services.DB.GetMetric(c.Param("name"))
 	if err != nil {
-		c.AbortWithError(404, err)
+		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 
-	c.Status(200)
+	c.Status(http.StatusOK)
 	c.Writer.WriteString(strconv.FormatFloat(val, 'f', -1, 64))
+}
+
+func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
+	var metric repo.Metrics
+	b, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	err = json.Unmarshal(b, &metric)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	val, err := h.services.DB.GetMetric(metric.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	if metric.MType == "gauge" {
+		metric.Value = &val
+	} else if metric.MType == "counter" {
+		delta := int64(val)
+		metric.Delta = &delta
+	} else {
+		c.AbortWithStatus(http.StatusNotImplemented)
+		return
+	}
+
+	outputJSON, err := json.Marshal(metric)
+	if err != nil {
+		c.AbortWithError(http.StatusNotImplemented, err)
+		return
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.Status(http.StatusOK)
+	c.Writer.Write(outputJSON)
 }
 
 func (h Handler) GetAllMetricsHandler(c *gin.Context) {
 	mt, err := h.services.DB.GetAllMetrics()
 	if err != nil {
-		c.AbortWithError(500, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -136,5 +177,5 @@ func (h Handler) GetAllMetricsHandler(c *gin.Context) {
 }
 
 func (h Handler) CustomNotFound(c *gin.Context) {
-	c.JSON(404, gin.H{"message": "Page not found"})
+	c.JSON(http.StatusNotFound, gin.H{"message": "Page not found"})
 }

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
+	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +18,7 @@ import (
 
 var pollInterval = 2 * time.Second
 var reportInterval = 10 * time.Second
+var baseURL = "http://localhost:8080/"
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 
@@ -28,6 +31,25 @@ type Metrics struct {
 
 func main() {
 	startReport := time.Now()
+
+	if addr, ok := os.LookupEnv("ADDRESS"); ok {
+		baseURL = addr
+	}
+
+	if repInterval, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
+		sec, err := strconv.Atoi(repInterval)
+		if err == nil {
+			reportInterval = time.Duration(sec) * time.Second
+		}
+	}
+
+	if pollInterv, ok := os.LookupEnv("POLL_INTERVAL"); ok {
+		sec, err := strconv.Atoi(pollInterv)
+		if err == nil {
+			pollInterval = time.Duration(sec) * time.Second
+		}
+	}
+
 	for {
 		var requests = make([]*resty.Request, 0, 29)
 		start := time.Now()
@@ -63,7 +85,7 @@ func main() {
 }
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
-	cli := resty.New().SetBaseURL("http://localhost:8080/")
+	cli := resty.New().SetBaseURL(baseURL)
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"
@@ -83,6 +105,6 @@ func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []
 func doRequest(requests []*resty.Request) {
 	fmt.Println("Отправили!")
 	for _, req := range requests {
-		go req.Post("/update/")
+		go req.Post("update/")
 	}
 }

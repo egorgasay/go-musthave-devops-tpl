@@ -4,16 +4,23 @@ import (
 	"devtool/config"
 	"devtool/internal/handlers"
 	repo "devtool/internal/repository"
-	"log"
-	"net/http"
-
+	"devtool/internal/routes"
 	"github.com/gin-gonic/gin"
+	"log"
+	"os"
 )
+
+var host = "localhost:8080"
 
 func main() {
 	r := gin.Default()
 
 	cfg := config.New()
+
+	if addr, ok := os.LookupEnv("ADDRESS"); ok {
+		host = addr
+	}
+
 	storage, err := repo.NewMemStorage(cfg.DBConfig)
 
 	if err != nil {
@@ -22,14 +29,9 @@ func main() {
 
 	h := handlers.NewHandler(storage)
 
+	public := r.Group("/")
+	routes.PublicRoutes(public, *h)
 	r.LoadHTMLGlob("templates/*")
 
-	r.POST("/update/", h.UpdateMetricByJSONHandler)
-	r.POST("/update/:type/:name/:value", h.UpdateMetricHandler)
-	r.GET("/value/:type/:name", h.GetMetricHandler)
-	r.POST("/value/", h.GetMetricByJSONHandler)
-	r.GET("/", h.GetAllMetricsHandler)
-	r.POST("/update/:type/", h.CustomNotFound)
-
-	log.Fatal(http.ListenAndServe(":8080", r))
+	r.Run(host)
 }

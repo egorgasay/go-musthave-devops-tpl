@@ -12,7 +12,10 @@ func (ms MemStorage) GetAllMetrics() ([]*Metrics, error) {
 	for rows.Next() {
 		metric := &Metrics{MType: "Test"}
 
-		rows.Scan(&metric.ID, &metric.Value)
+		err = rows.Scan(&metric.ID, &metric.Value)
+		if err != nil {
+			return nil, err
+		}
 		mt = append(mt, metric)
 	}
 

@@ -94,10 +94,11 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 			Value: &val,
 		}
 	case "counter":
+		delta := int64(val)
 		mt = &repo.Metrics{
 			ID:    name,
 			MType: metricType,
-			Value: &val,
+			Delta: &delta,
 		}
 	}
 

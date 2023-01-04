@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
@@ -16,9 +17,17 @@ import (
 // 	"MSpanInuse", "MSpanSys", "Mallocs", "NextGC", "NumForcedGC", "NumGC", "OtherSys", "PauseTotalNs",
 // 	"PollCount", "RandomValue", "StackInuse", "StackSys", "Sys", "TotalAlloc"}
 
-var pollInterval = 2 * time.Second
-var reportInterval = 10 * time.Second
-var baseURL = "localhost:8080"
+var (
+	pollIntervalFlag   *int
+	baseURL            *string
+	reportIntervalFlag *int
+)
+
+func init() {
+	baseURL = flag.String("a", "localhost:8080", "-a=host")
+	pollIntervalFlag = flag.Int("p", 2, "-p=Seconds")
+	reportIntervalFlag = flag.Int("r", 10, "-r=Seconds")
+}
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 
@@ -31,9 +40,12 @@ type Metrics struct {
 
 func main() {
 	startReport := time.Now()
+	flag.Parse()
+	var pollInterval = time.Duration(*pollIntervalFlag) * time.Second
+	var reportInterval = time.Duration(*reportIntervalFlag) * time.Second
 
 	if addr, ok := os.LookupEnv("ADDRESS"); ok {
-		baseURL = addr
+		baseURL = &addr
 	}
 
 	if repInterval, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
@@ -87,7 +99,7 @@ func main() {
 }
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
-	cli := resty.New().SetBaseURL("http://" + baseURL)
+	cli := resty.New().SetBaseURL("http://" + *baseURL)
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"

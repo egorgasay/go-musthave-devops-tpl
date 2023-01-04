@@ -29,18 +29,16 @@ func New(saveAfter int, restore bool, path string) *Config {
 		if err != nil {
 			saveAfterInt = 300
 		}
-		
+
 		saveAfter = saveAfterInt
 	}
-
-	
 
 	saveAfterSeconds := time.Duration(saveAfter) * time.Second
 
 	return &Config{
 		DBConfig: &repository.Config{
-			DriverName:     "file",           // выбор между file, sqlite3, map
-			DataSourceName: path,             // path
+			DriverName:     "sqlite3",        // выбор между file, sqlite3, map
+			DataSourceName: "devtool.db",     // path
 			SaveAfter:      saveAfterSeconds, // через сколько секунд изменения будут записываться
 			Restore:        restore,          // восстанавливать ли предыдущие значения
 		},

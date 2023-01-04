@@ -5,7 +5,7 @@
 package mock_service
 
 import (
-	repository "devtool/internal/repository"
+	storage "devtool/internal/storage"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,10 +35,10 @@ func (m *MockIService) EXPECT() *MockIServiceMockRecorder {
 }
 
 // GetAllMetrics mocks base method.
-func (m *MockIService) GetAllMetrics() ([]*repository.Metrics, error) {
+func (m *MockIService) GetAllMetrics() ([]*storage.Metrics, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllMetrics")
-	ret0, _ := ret[0].([]*repository.Metrics)
+	ret0, _ := ret[0].([]*storage.Metrics)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,7 +65,7 @@ func (mr *MockIServiceMockRecorder) GetMetric(arg0 interface{}) *gomock.Call {
 }
 
 // UpdateMetric mocks base method.
-func (m *MockIService) UpdateMetric(arg0 *repository.Metrics) (float64, error) {
+func (m *MockIService) UpdateMetric(arg0 *storage.Metrics) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMetric", arg0)
 	ret0, _ := ret[0].(float64)

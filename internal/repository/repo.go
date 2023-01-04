@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"devtool/internal/globals"
 	"devtool/internal/storage"
 	dbstorage "devtool/internal/storage/db"
 	filestorage "devtool/internal/storage/file"
@@ -13,14 +14,8 @@ import (
 type Config struct {
 	DriverName     string
 	DataSourceName string
-	TimeBeforeSave time.Duration
-}
-
-type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	SaveAfter      time.Duration
+	Restore        bool
 }
 
 type Repository struct {
@@ -31,6 +26,8 @@ func New(cfg *Config) (*Repository, error) {
 	if cfg == nil {
 		panic("конфигурация задана некорректно")
 	}
+	globals.Restore = cfg.Restore
+	globals.SaveAfter = cfg.SaveAfter
 
 	switch cfg.DriverName {
 	case "sqlite3":

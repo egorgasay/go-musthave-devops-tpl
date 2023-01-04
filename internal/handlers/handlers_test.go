@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"bytes"
-	repo "devtool/internal/repository"
 	"devtool/internal/service"
 	service_mocks "devtool/internal/service/mocks"
+	"devtool/internal/storage"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -27,7 +27,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "Ok",
 			url:  "http://localhost:8080/update/gauge/Alloc/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "Alloc", MType: "gauge", Value: &fval}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{ID: "Alloc", MType: "gauge", Value: &fval}).
 					Return(fval, nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
@@ -36,7 +36,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "Ok, but value doesn't exist yet",
 			url:  "http://localhost:8080/update/gauge/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge", Value: &fval}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{ID: "AllocNew", MType: "gauge", Value: &fval}).
 					Return(fval, nil).AnyTimes()
 			},
 			expectedStatusCode: 200,
@@ -45,7 +45,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "не определен",
 			url:  "http://localhost:8080/update/gauge2/AllocNew/6.0",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{ID: "AllocNew", MType: "gauge2", Value: &fval}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{ID: "AllocNew", MType: "gauge2", Value: &fval}).
 					Return(fval, errors.New("тип не определен")).AnyTimes()
 			},
 			expectedStatusCode: 501,
@@ -54,7 +54,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "404",
 			url:  "http://localhost:8080/update/gauge",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{}).
 					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 404,
@@ -63,7 +63,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "no value",
 			url:  "http://localhost:8080/update/gauge/Alloc/",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{}).
 					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 404,
@@ -72,7 +72,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			name: "wrong value type",
 			url:  "http://localhost:8080/update/gauge/Alloc/664q",
 			mockBehavior: func(r *service_mocks.MockIService) {
-				r.EXPECT().UpdateMetric(&repo.Metrics{}).
+				r.EXPECT().UpdateMetric(&storage.Metrics{}).
 					Return(0.0, nil).AnyTimes()
 			},
 			expectedStatusCode: 400,

@@ -2,14 +2,21 @@ package filestorage
 
 import (
 	"bufio"
+	"devtool/internal/globals"
 	"devtool/internal/storage"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (fs *FileStorage) UpdateOneMetric(mt *storage.Metrics) (count float64, err error) {
-	err = fs.OpenRead()
+	if globals.Restore {
+		err = fs.OpenRead()
+	} else {
+		err = fs.OpenWrite()
+	}
+
 	if err != nil {
 		return 0, err
 	}
@@ -59,6 +66,8 @@ func (fs *FileStorage) UpdateOneMetric(mt *storage.Metrics) (count float64, err 
 	fs.Close()
 
 	go func() {
+		time.Sleep(globals.SaveAfter)
+
 		fs.OpenWrite()
 		defer fs.Close()
 		output := []byte(strings.Join(lines, "\n"))

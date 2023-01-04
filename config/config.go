@@ -9,8 +9,8 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		DBConfig: &repository.Config{
-			DriverName:     "sqlite3",
-			DataSourceName: "devtool.db",
+			DriverName:     "map",      // выбор между file, sqlite3, map
+			DataSourceName: "temp.txt", // path
 		},
 	}
 }

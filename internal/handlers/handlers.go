@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"devtool/internal/storage"
 	"encoding/json"
 	"io"
 	"log"
@@ -18,12 +19,12 @@ type Handler struct {
 	services *service.Service
 }
 
-func NewHandler(db *repo.MemStorage) *Handler {
+func NewHandler(db *repo.Repository) *Handler {
 	return &Handler{services: service.NewService(db)}
 }
 
 func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
-	var metrics repo.Metrics
+	var metrics storage.Metrics
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -84,18 +85,18 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	}
 	name := c.Param("name")
 
-	var mt *repo.Metrics
+	var mt *storage.Metrics
 
 	switch metricType {
 	case "gauge":
-		mt = &repo.Metrics{
+		mt = &storage.Metrics{
 			ID:    name,
 			MType: metricType,
 			Value: &val,
 		}
 	case "counter":
 		delta := int64(val)
-		mt = &repo.Metrics{
+		mt = &storage.Metrics{
 			ID:    name,
 			MType: metricType,
 			Delta: &delta,
@@ -123,7 +124,7 @@ func (h Handler) GetMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
-	var metric repo.Metrics
+	var metric storage.Metrics
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)

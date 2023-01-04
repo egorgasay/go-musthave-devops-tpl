@@ -4,6 +4,7 @@ package service
 
 import (
 	repo "devtool/internal/repository"
+	"devtool/internal/storage"
 )
 
 // type Service struct {
@@ -13,20 +14,18 @@ import (
 // }
 
 type IService interface {
-	UpdateMetric(*repo.Metrics) (float64, error)
+	UpdateMetric(*storage.Metrics) (float64, error)
 	GetMetric(string) (float64, error)
-	GetAllMetrics() ([]*repo.Metrics, error)
+	GetAllMetrics() ([]*storage.Metrics, error)
 }
 
 type Service struct {
 	DB IService
 }
 
-func NewService(db *repo.MemStorage) *Service {
+func NewService(db *repo.Repository) *Service {
 	return &Service{DB: db}
 }
-
-type Metrics repo.Metrics
 
 // type UpdateMetric interface {
 // 	UpdateMetric(*repo.Metrics) error

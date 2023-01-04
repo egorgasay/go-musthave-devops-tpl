@@ -107,6 +107,6 @@ func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []
 func doRequest(requests []*resty.Request) {
 	fmt.Println("Отправили!")
 	for _, req := range requests {
-		go req.Post("update/")
+		req.Post("update/")
 	}
 }

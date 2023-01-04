@@ -2,34 +2,18 @@ package repository
 
 import (
 	"database/sql"
+	"devtool/internal/storage"
+	dbstorage "devtool/internal/storage/db"
+	filestorage "devtool/internal/storage/file"
+	mapstorage "devtool/internal/storage/map"
+	"os"
+	"time"
 )
 
 type Config struct {
 	DriverName     string
 	DataSourceName string
-}
-
-type IMemStorage interface {
-	Ping() error
-	Close() error
-	Query(string, ...any) (*sql.Rows, error)
-	Exec(string, ...any) (sql.Result, error)
-	QueryRow(string, ...any) *sql.Row
-}
-
-type MemStorage struct {
-	DB IMemStorage
-}
-
-func NewMemStorage(cfg *Config) (*MemStorage, error) {
-	db, err := sql.Open(cfg.DriverName, cfg.DataSourceName)
-	if err != nil {
-		return nil, err
-	}
-
-	return &MemStorage{
-		DB: db,
-	}, nil
+	TimeBeforeSave time.Duration
 }
 
 type Metrics struct {
@@ -39,10 +23,32 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-type MemStorageMethods struct {
-	DB IMemStorage
+type Repository struct {
+	repo storage.IStorage
 }
 
-//func NewMemStorageMethods(ms IMemStorage) *MemStorageMethods {
-//	return &MemStorageMethods{DB: ms}
-//}
+func New(cfg *Config) (*Repository, error) {
+	if cfg == nil {
+		panic("конфигурация задана некорректно")
+	}
+
+	switch cfg.DriverName {
+	case "sqlite3":
+		db, err := sql.Open(cfg.DriverName, cfg.DataSourceName)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Repository{repo: dbstorage.New(db)}, nil
+	case "file":
+		filename := cfg.DataSourceName
+		if name, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
+			filename = name
+		}
+
+		return &Repository{repo: filestorage.New(filename)}, nil
+
+	default:
+		return &Repository{repo: mapstorage.New()}, nil
+	}
+}

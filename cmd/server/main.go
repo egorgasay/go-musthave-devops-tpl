@@ -21,7 +21,7 @@ func main() {
 		host = addr
 	}
 
-	storage, err := repo.NewMemStorage(cfg.DBConfig)
+	storage, err := repo.New(cfg.DBConfig)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize: %s", err.Error())

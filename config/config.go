@@ -11,7 +11,7 @@ type Config struct {
 	DBConfig *repository.Config
 }
 
-func New(saveAfter string, restore bool, path string) *Config {
+func New(saveAfter int, restore bool, path string) *Config {
 
 	if pathEnv, ok := os.LookupEnv("STORE_FILE"); ok {
 		path = pathEnv
@@ -25,15 +25,17 @@ func New(saveAfter string, restore bool, path string) *Config {
 	}
 
 	if saveAfterEnv, ok := os.LookupEnv("STORE_INTERVAL"); ok {
-		saveAfter = saveAfterEnv
+		saveAfterInt, err := strconv.Atoi(saveAfterEnv)
+		if err != nil {
+			saveAfterInt = 300
+		}
+		
+		saveAfter = saveAfterInt
 	}
 
-	saveAfterInt, err := strconv.Atoi(saveAfter)
-	if err != nil {
-		saveAfterInt = 300
-	}
+	
 
-	saveAfterSeconds := time.Duration(saveAfterInt) * time.Second
+	saveAfterSeconds := time.Duration(saveAfter) * time.Second
 
 	return &Config{
 		DBConfig: &repository.Config{

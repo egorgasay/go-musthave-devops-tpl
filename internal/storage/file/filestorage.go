@@ -6,20 +6,22 @@ import (
 )
 
 type FileStorage struct {
-	Path string
-	File *os.File
-	Mu   sync.Mutex
+	Path  string
+	File  *os.File
+	Store map[string]float64
+	Mu    sync.Mutex
 }
 
 func New(path string) *FileStorage {
 	return &FileStorage{
-		Path: path,
+		Path:  path,
+		Store: make(map[string]float64),
 	}
 }
 
 func (fs *FileStorage) OpenRead() error {
 	fs.Mu.Lock()
-	file, err := os.OpenFile(fs.Path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	file, err := os.OpenFile(fs.Path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
@@ -30,7 +32,7 @@ func (fs *FileStorage) OpenRead() error {
 
 func (fs *FileStorage) OpenWrite() error {
 	fs.Mu.Lock()
-	file, err := os.OpenFile(fs.Path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(fs.Path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}

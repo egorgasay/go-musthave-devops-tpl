@@ -14,6 +14,10 @@ func (fs *FileStorage) GetOneMetric(name string) (float64, error) {
 	}
 	defer fs.Close()
 
+	if val, ok := fs.Store[name]; ok {
+		return val, nil
+	}
+
 	scanner := bufio.NewScanner(fs.File)
 	for scanner.Scan() {
 		row := strings.Split(scanner.Text(), " ")

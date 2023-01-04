@@ -16,20 +16,20 @@ import (
 var (
 	host      *string
 	path      *string
-	saveAfter *string
+	saveAfter *int
 	restore   *bool
 )
 
 func init() {
 	host = flag.String("a", "localhost:8080", "-a=host")
-	saveAfter = flag.String("i", "300", "-i=URL")
+	saveAfter = flag.Int("i", 300, "-i=Seconds")
 	path = flag.String("f", "/tmp/devops-metrics-db.json", "-f=path")
 	restore = flag.Bool("r", true, "-r=restore")
 }
 
 func main() {
+	flag.Parse()
 	r := gin.Default()
-
 	cfg := config.New(*saveAfter, *restore, *path)
 
 	if addr, ok := os.LookupEnv("ADDRESS"); ok {

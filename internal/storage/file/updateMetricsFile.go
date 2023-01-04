@@ -5,10 +5,10 @@ import (
 	"devtool/internal/globals"
 	"devtool/internal/storage"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
-	"log"
 )
 
 func (fs *FileStorage) UpdateOneMetric(mt *storage.Metrics) (count float64, err error) {
@@ -67,7 +67,7 @@ func (fs *FileStorage) UpdateOneMetric(mt *storage.Metrics) (count float64, err 
 	fs.Store[mt.ID] = count
 	fs.Close()
 
-	func() {
+	go func() {
 		time.Sleep(globals.SaveAfter)
 
 		fs.OpenWrite()

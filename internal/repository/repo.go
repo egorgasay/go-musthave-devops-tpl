@@ -26,6 +26,7 @@ func New(cfg *Config) (*Repository, error) {
 	if cfg == nil {
 		panic("конфигурация задана некорректно")
 	}
+
 	globals.Restore = cfg.Restore
 	globals.SaveAfter = cfg.SaveAfter
 

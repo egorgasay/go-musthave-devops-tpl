@@ -16,13 +16,13 @@ import (
 var (
 	host      *string
 	path      *string
-	saveAfter *int
+	saveAfter *string
 	restore   *bool
 )
 
 func init() {
 	host = flag.String("a", "localhost:8080", "-a=host")
-	saveAfter = flag.Int("i", 300, "-i=Seconds")
+	saveAfter = flag.String("i", "5m", "-i=Seconds")
 	path = flag.String("f", "/tmp/devops-metrics-db.json", "-f=path")
 	restore = flag.Bool("r", true, "-r=restore")
 }

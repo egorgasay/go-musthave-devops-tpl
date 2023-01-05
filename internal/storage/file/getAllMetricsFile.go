@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (fs *FileStorage) GetListOfMetrics() ([]*storage.Metrics, error) {
+func (fs *FileStorage) GetAllMetrics() ([]*storage.Metrics, error) {
 	var metrics []*storage.Metrics
 	err := fs.OpenRead()
 	if err != nil {

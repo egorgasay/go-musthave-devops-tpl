@@ -6,8 +6,9 @@ import (
 	"devtool/internal/storage"
 	dbstorage "devtool/internal/storage/db"
 	filestorage "devtool/internal/storage/file"
-	mapstorage "devtool/internal/storage/map"
+	"errors"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -18,8 +19,15 @@ type Config struct {
 	Restore        bool
 }
 
+//type Repository struct {
+//	RAMStorage storage.IStorage
+//	BackupStorage storage.IBackupStorage
+//}
+
 type Repository struct {
-	repo storage.IStorage
+	Mu            sync.RWMutex
+	Store         map[string]float64
+	BackupStorage storage.IBackupStorage
 }
 
 func New(cfg *Config) (*Repository, error) {
@@ -27,8 +35,16 @@ func New(cfg *Config) (*Repository, error) {
 		panic("конфигурация задана некорректно")
 	}
 
-	globals.Restore = cfg.Restore
 	globals.SaveAfter = cfg.SaveAfter
+
+	ms := make(map[string]float64)
+	repo := &Repository{
+		Store: ms,
+	}
+
+	if cfg.Restore {
+		defer repo.Restore()
+	}
 
 	switch cfg.DriverName {
 	case "sqlite3":
@@ -36,17 +52,20 @@ func New(cfg *Config) (*Repository, error) {
 		if err != nil {
 			return nil, err
 		}
+		realDB := dbstorage.New(db)
+		repo.BackupStorage = realDB
 
-		return &Repository{repo: dbstorage.New(db)}, nil
+		return repo, nil
 	case "file":
 		filename := cfg.DataSourceName
 		if name, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 			filename = name
 		}
+		fileStorage := filestorage.New(filename)
+		repo.BackupStorage = fileStorage
 
-		return &Repository{repo: filestorage.New(filename)}, nil
-
+		return repo, nil
 	default:
-		return &Repository{repo: mapstorage.New()}, nil
+		return repo, errors.New("неподдерживаемый тип хранилища")
 	}
 }

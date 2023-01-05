@@ -37,10 +37,10 @@ func New(saveAfter string, restore bool, path string) *Config {
 
 	return &Config{
 		DBConfig: &repository.Config{
-			DriverName:     "sqlite3",    // выбор между file, sqlite3, map
-			DataSourceName: "devtool.db", // path
-			SaveAfter:      SaveAfter,    // через сколько секунд изменения будут записываться
-			Restore:        restore,      // восстанавливать ли предыдущие значения
+			DriverName:     "file",    // выбор между sqlite3, file
+			DataSourceName: path,      // путь до файла или данные бд
+			SaveAfter:      SaveAfter, // через сколько секунд изменения будут записываться
+			Restore:        restore,   // восстанавливать ли предыдущие значения
 		},
 	}
 }

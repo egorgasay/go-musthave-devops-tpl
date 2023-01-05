@@ -2,7 +2,7 @@ package dbstorage
 
 import "devtool/internal/storage"
 
-func (rs *RealStorage) GetListOfMetrics() ([]*storage.Metrics, error) {
+func (rs *RealStorage) GetAllMetrics() ([]*storage.Metrics, error) {
 	var mt []*storage.Metrics
 	query := "SELECT name, value FROM metrics"
 

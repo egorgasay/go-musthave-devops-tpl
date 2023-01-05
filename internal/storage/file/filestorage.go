@@ -6,16 +6,14 @@ import (
 )
 
 type FileStorage struct {
-	Path  string
-	File  *os.File
-	Store map[string]float64
-	Mu    sync.Mutex
+	Path string
+	File *os.File
+	Mu   sync.Mutex
 }
 
 func New(path string) *FileStorage {
 	return &FileStorage{
-		Path:  path,
-		Store: make(map[string]float64),
+		Path: path,
 	}
 }
 

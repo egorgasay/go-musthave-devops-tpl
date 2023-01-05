@@ -31,7 +31,7 @@ var StorageRelevance = Relevance{
 	Status: true,
 }
 
-var EOF = errors.New("конец данных")
+var EndOfData = errors.New("конец данных")
 
 type IBackupStorage interface {
 	GetAllMetrics() ([]*Metrics, error)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"devtool/config"
 	"devtool/internal/handlers"
 	repo "devtool/internal/repository"
@@ -9,7 +10,10 @@ import (
 	"flag"
 	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -32,10 +36,16 @@ func init() {
 func main() {
 	flag.Parse()
 	r := gin.Default()
+
 	cfg := config.New(*saveAfter, *restore, *path)
 
 	if addr, ok := os.LookupEnv("ADDRESS"); ok {
 		host = &addr
+	}
+
+	srv := &http.Server{
+		Addr:    *host,
+		Handler: r,
 	}
 
 	storage, err := repo.New(cfg.DBConfig)
@@ -70,5 +80,50 @@ func main() {
 	routes.PublicRoutes(public, *h)
 	r.LoadHTMLGlob("templates/*")
 
-	r.Run(*host)
+	go func() {
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	shutdown := make(chan struct{}, 1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	defer cancel()
+
+	go func() {
+		store.StorageRelevance.Mu.RLock()
+		if !store.StorageRelevance.Status {
+			store.StorageRelevance.Mu.RUnlock()
+
+			err := storage.BackupStorage.DoBackup(storage.Store)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			store.StorageRelevance.Mu.RUnlock()
+		}
+
+		shutdown <- struct{}{}
+	}()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+
+	select {
+	case <-ctx.Done():
+		log.Println("Timeout exited")
+	case <-shutdown:
+		log.Println("Finished")
+	}
+
+	log.Println("Server exiting")
 }

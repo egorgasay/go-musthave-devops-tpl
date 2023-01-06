@@ -2,6 +2,8 @@ package dbstorage
 
 import (
 	"database/sql"
+	"devtool/internal/storage"
+	"log"
 )
 
 func (rs *RealStorage) DoBackup(ms map[string]float64) (err error) {
@@ -19,7 +21,15 @@ func (rs *RealStorage) DoBackup(ms map[string]float64) (err error) {
 		return err
 	}
 
+	storage.StorageRelevance.Mu.Lock()
+
 	for name, value := range ms {
+		if _, ok := storage.StorageRelevance.UpdateNeeded[name]; !ok {
+			continue
+		}
+
+		delete(storage.StorageRelevance.UpdateNeeded, name)
+
 		_, err = stmtIn.Exec(name, value)
 		if err != nil {
 			continue
@@ -29,7 +39,11 @@ func (rs *RealStorage) DoBackup(ms map[string]float64) (err error) {
 		if err != nil {
 			continue
 		}
+
+		log.Println(name, "Saved")
 	}
+
+	storage.StorageRelevance.Mu.Unlock()
 
 	return err
 }

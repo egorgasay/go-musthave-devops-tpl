@@ -20,6 +20,7 @@ func (r *Repository) UpdateMetric(mt *storage.Metrics) (count float64, err error
 	}
 
 	storage.StorageRelevance.Mu.Lock()
+	storage.StorageRelevance.UpdateNeeded[mt.ID] = struct{}{}
 	storage.StorageRelevance.Status = false
 	storage.StorageRelevance.Mu.Unlock()
 

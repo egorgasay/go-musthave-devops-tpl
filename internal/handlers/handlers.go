@@ -51,6 +51,8 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 		metrics.Delta = &delta
 	}
 
+	metrics.UpdateNeeded = true
+
 	byteJSON, err := json.MarshalIndent(metrics, "", "    ")
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, err.Error())

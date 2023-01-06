@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"sync"
 )
 
@@ -32,8 +31,6 @@ var StorageRelevance = Relevance{
 	UpdateNeeded: make(map[string]struct{}),
 	Status:       true,
 }
-
-var EndOfData = errors.New("конец данных")
 
 type IBackupStorage interface {
 	GetAllMetrics() ([]*Metrics, error)

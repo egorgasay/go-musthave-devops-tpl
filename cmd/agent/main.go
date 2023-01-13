@@ -100,6 +100,8 @@ func main() {
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
 	cli := resty.New().SetBaseURL("http://" + *baseURL)
+	cli.RetryCount = 3
+
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"

@@ -39,7 +39,7 @@ func main() {
 
 	cfg := config.New(*saveAfter, *restore, *path)
 
-	if addr, ok := os.LookupEnv("ADDRESS"); ok {
+	if addr, ok := os.LookupEnv("ADDRESS"); ok && addr != "" {
 		host = &addr
 	}
 
@@ -79,6 +79,9 @@ func main() {
 	public := r.Group("/")
 	routes.PublicRoutes(public, *h)
 	r.LoadHTMLGlob("templates/*")
+
+	log.Println(*host)
+	log.Println(*cfg.DBConfig)
 
 	go func() {
 		// service connections

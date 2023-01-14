@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	baseURL = flag.String("a", "localhost:8080", "-a=host")
+	baseURL = flag.String("a", "http://localhost:8080", "-a=host")
 	pollIntervalFlag = flag.Int("p", 2, "-p=Seconds")
 	reportIntervalFlag = flag.Int("r", 10, "-r=Seconds")
 }

@@ -7,7 +7,6 @@ import (
 	repo "devtool/internal/repository"
 	"devtool/internal/routes"
 	store "devtool/internal/storage"
-	"flag"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -17,41 +16,20 @@ import (
 	"time"
 )
 
-//var host = "localhost:8080"
-
-var (
-	host      *string
-	path      *string
-	saveAfter *string
-	restore   *bool
-)
-
-func init() {
-	host = flag.String("a", "localhost:8080", "-a=host")
-	saveAfter = flag.String("i", "5m", "-i=Seconds")
-	path = flag.String("f", "/tmp/devops-metrics-db.json", "-f=path")
-	restore = flag.Bool("r", true, "-r=restore")
-}
-
 func main() {
-	flag.Parse()
+
 	r := gin.Default()
 
-	cfg := config.New(*saveAfter, *restore, *path)
-
-	if addr, ok := os.LookupEnv("ADDRESS"); ok && addr != "" {
-		host = &addr
-	}
+	cfg := config.New()
 
 	srv := &http.Server{
-		Addr:    *host,
+		Addr:    cfg.Host,
 		Handler: r,
 	}
 
 	storage, err := repo.New(cfg.DBConfig)
 	// add context
-	go func(storage *repo.Repository, saveAfter string) {
-		storeInterval, err := time.ParseDuration(saveAfter)
+	go func(storage *repo.Repository, storeInterval time.Duration) {
 		if err != nil {
 			panic(err)
 		}
@@ -68,7 +46,7 @@ func main() {
 			}
 			store.StorageRelevance.Mu.RUnlock()
 		}
-	}(storage, *saveAfter)
+	}(storage, cfg.DBConfig.SaveAfter)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize: %s", err.Error())
@@ -80,8 +58,8 @@ func main() {
 	routes.PublicRoutes(public, *h)
 	r.LoadHTMLGlob("templates/*")
 
-	log.Println(*host)
-	log.Println(*cfg.DBConfig)
+	log.Println(cfg.Host)
+	log.Println(cfg.DBConfig)
 
 	go func() {
 		// service connections
@@ -98,7 +76,7 @@ func main() {
 
 	shutdown := make(chan struct{}, 1)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 450*time.Millisecond)
 	defer cancel()
 
 	go func() {

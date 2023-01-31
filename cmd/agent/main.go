@@ -4,11 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"log"
 	"math/rand"
 	"os"
 	"reflect"
 	"runtime"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -18,15 +20,15 @@ import (
 // 	"PollCount", "RandomValue", "StackInuse", "StackSys", "Sys", "TotalAlloc"}
 
 var (
-	pollIntervalFlag   *int
-	baseURL            *string
-	reportIntervalFlag *int
+	pollInterval   time.Duration
+	baseURL        string
+	reportInterval time.Duration
 )
 
 func init() {
-	baseURL = flag.String("a", "localhost:8080", "-a=host")
-	pollIntervalFlag = flag.Int("p", 2, "-p=Seconds")
-	reportIntervalFlag = flag.Int("r", 10, "-r=Seconds")
+	baseURL = *flag.String("a", "localhost:8080/", "-a=host")
+	flag.DurationVar(&pollInterval, "p", 2*time.Second, "-p=Seconds")
+	flag.DurationVar(&reportInterval, "r", 10*time.Second, "-r=Seconds")
 }
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
@@ -39,13 +41,12 @@ type Metrics struct {
 }
 
 func main() {
-	startReport := time.Now()
+	//startReport := time.Now()
 	flag.Parse()
-	var pollInterval = time.Duration(*pollIntervalFlag) * time.Second
-	var reportInterval = time.Duration(*reportIntervalFlag) * time.Second
+	signalChanel := make(chan os.Signal, 1)
 
 	if addr, ok := os.LookupEnv("ADDRESS"); ok {
-		baseURL = &addr
+		baseURL = addr
 	}
 
 	if repInterval, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
@@ -64,44 +65,71 @@ func main() {
 
 	fmt.Println(pollInterval, reportInterval, baseURL)
 
+	refreshTicker := time.NewTicker(pollInterval)
+	uploadTicker := time.NewTicker(reportInterval)
+	metrics := make(chan []*resty.Request, 1)
+
 	for {
-		var requests = make([]*resty.Request, 0, 29)
-		start := time.Now()
-		var mem runtime.MemStats
-
-		requests = makeNewRequest("counter", "PollCount", 1.0, requests)
-		requests = makeNewRequest("gauge", "RandomValue", float64(rand.Intn(1000000)), requests)
-
-		runtime.ReadMemStats(&mem)
-		v := reflect.ValueOf(mem)
-		tof := v.Type()
-
-		for j := 0; j < v.NumField(); j++ {
-			val := 0.0
-			if !v.Field(j).CanUint() && !v.Field(j).CanFloat() {
-				continue
-			} else if !v.Field(j).CanUint() {
-				val = v.Field(j).Float()
-			} else {
-				val = float64(v.Field(j).Uint())
+		select {
+		case <-refreshTicker.C:
+			log.Println("Refreshing metrics...")
+			Refresh(metrics)
+		case <-uploadTicker.C:
+			log.Println("Uploading metrics...")
+			doRequest(<-metrics)
+		case osSignal := <-signalChanel:
+			switch osSignal {
+			case syscall.SIGTERM:
+				log.Println("syscall: SIGTERM")
+			case syscall.SIGINT:
+				log.Println("syscall: SIGINT")
+			case syscall.SIGQUIT:
+				log.Println("syscall: SIGQUIT")
 			}
+			os.Exit(1)
+		}
+	}
+}
 
-			name := tof.Field(j).Name
-			requests = makeNewRequest("gauge", name, val, requests)
+func Refresh(metrics chan []*resty.Request) {
+	var requests = make([]*resty.Request, 0, 29)
+	var mem runtime.MemStats
+
+	requests = makeNewRequest("counter", "PollCount", 1.0, requests)
+	requests = makeNewRequest("gauge", "RandomValue", float64(rand.Intn(1000000)), requests)
+
+	runtime.ReadMemStats(&mem)
+	v := reflect.ValueOf(mem)
+	tof := v.Type()
+
+	for j := 0; j < v.NumField(); j++ {
+		val := 0.0
+		if !v.Field(j).CanUint() && !v.Field(j).CanFloat() {
+			continue
+		} else if !v.Field(j).CanUint() {
+			val = v.Field(j).Float()
+		} else {
+			val = float64(v.Field(j).Uint())
 		}
-		time.Sleep(pollInterval - time.Since(start))
-		if reportInterval-time.Since(startReport) <= 0 {
-			startReport = time.Now()
-			doRequest(requests)
-		}
+
+		name := tof.Field(j).Name
+		requests = makeNewRequest("gauge", name, val, requests)
+	}
+
+	select {
+	case metrics <- requests:
+	default:
+		<-metrics
+		metrics <- requests
 	}
 
 }
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
-	cli := resty.New().SetBaseURL("http://" + *baseURL)
-	cli.RetryCount = 3
-
+	cli := resty.New().SetBaseURL("http://" + baseURL)
+	cli.RetryCount = 2
+	cli.RetryWaitTime = time.Duration(10) * time.Second
+	cli.RetryMaxWaitTime = time.Duration(90) * time.Second
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"
@@ -121,6 +149,6 @@ func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []
 func doRequest(requests []*resty.Request) {
 	fmt.Println("Отправили!")
 	for _, req := range requests {
-		req.Post("update/")
+		go req.Post("update/")
 	}
 }

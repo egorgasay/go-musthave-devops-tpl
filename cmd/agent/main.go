@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	baseURL = *flag.String("a", "localhost:8080/", "-a=host")
+	flag.StringVar(&baseURL, "a", "localhost:8080/", "-a=host")
 	flag.DurationVar(&pollInterval, "p", 2*time.Second, "-p=Seconds")
 	flag.DurationVar(&reportInterval, "r", 10*time.Second, "-r=Seconds")
 }

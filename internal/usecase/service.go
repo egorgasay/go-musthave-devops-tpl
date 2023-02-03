@@ -9,7 +9,7 @@ type UseCase struct {
 	service *service.Service
 }
 
-var NotFoundErr = errors.New("not found")
+var ErrNotFound = errors.New("not found")
 
 func New(service *service.Service) UseCase {
 	return UseCase{service: service}

@@ -26,7 +26,7 @@ func (uc UseCase) GetMetricByJSON(b []byte) ([]byte, error) {
 
 	val, err := uc.service.DB.GetMetric(metric.ID)
 	if err != nil {
-		return nil, NotFoundErr
+		return nil, ErrNotFound
 	}
 
 	if metric.MType == "gauge" {

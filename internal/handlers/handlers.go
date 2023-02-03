@@ -20,15 +20,17 @@ func NewHandler(logic usecase.UseCase) *Handler {
 }
 
 func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
-	b, err := io.ReadAll(c.Request.Body)
+	b, err := h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.Error(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	byteJSON, err := h.logic.UpdateMetricByJSON(b)
 	if err != nil {
-		if errors.Is(err, usecase.NotFoundErr) {
+		if errors.Is(err, usecase.ErrNotFound) {
 			c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 			return
 		}
@@ -91,9 +93,17 @@ func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
 		return
 	}
 
+	b, err = h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
+	if err != nil {
+		c.Error(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
 	outputJSON, err := h.logic.GetMetricByJSON(b)
 	if err != nil {
-		if errors.Is(err, usecase.NotFoundErr) {
+		if errors.Is(err, usecase.ErrNotFound) {
 			c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 			return
 		}

@@ -9,6 +9,7 @@ import (
 	"devtool/internal/service"
 	store "devtool/internal/storage"
 	"devtool/internal/usecase"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -57,6 +58,8 @@ func main() {
 	Service := service.NewService(storage)
 	logic := usecase.New(Service)
 	h := handlers.NewHandler(logic)
+
+	r.Use(gzip.Gzip(gzip.BestSpeed))
 
 	public := r.Group("/")
 	routes.PublicRoutes(public, *h)

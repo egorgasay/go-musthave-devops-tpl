@@ -15,7 +15,7 @@ func (uc UseCase) UpdateMetricByJSON(b []byte) ([]byte, error) {
 
 	count, err := uc.service.DB.UpdateMetric(&metrics)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateMetricByJSON: %w", NotFoundErr)
+		return nil, fmt.Errorf("UpdateMetricByJSON: %w", ErrNotFound)
 	}
 
 	if metrics.MType == "gauge" {
@@ -29,7 +29,7 @@ func (uc UseCase) UpdateMetricByJSON(b []byte) ([]byte, error) {
 
 	byteJSON, err := json.MarshalIndent(metrics, "", "    ")
 	if err != nil {
-		return nil, fmt.Errorf("UpdateMetricByJSON: %w", NotFoundErr)
+		return nil, fmt.Errorf("UpdateMetricByJSON: %w", ErrNotFound)
 	}
 
 	return byteJSON, nil

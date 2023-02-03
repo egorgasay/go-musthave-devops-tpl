@@ -5,6 +5,7 @@ import (
 	"devtool/internal/service"
 	service_mocks "devtool/internal/service/mocks"
 	"devtool/internal/storage"
+	"devtool/internal/usecase"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -87,7 +88,8 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			test.mockBehavior(repos)
 
 			services := &service.Service{DB: repos}
-			handler := Handler{services}
+			logic := usecase.New(services)
+			handler := Handler{logic: logic}
 
 			req := httptest.NewRequest("POST", test.url,
 				bytes.NewBufferString(""))
@@ -146,7 +148,8 @@ func TestHandler_GetMetric(t *testing.T) {
 			test.mockBehavior(repos)
 
 			services := &service.Service{DB: repos}
-			handler := Handler{services}
+			logic := usecase.New(services)
+			handler := Handler{logic: logic}
 
 			req := httptest.NewRequest("GET", test.url,
 				bytes.NewBufferString(""))

@@ -6,7 +6,9 @@ import (
 	"devtool/internal/handlers"
 	repo "devtool/internal/repository"
 	"devtool/internal/routes"
+	"devtool/internal/service"
 	store "devtool/internal/storage"
+	"devtool/internal/usecase"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -52,7 +54,9 @@ func main() {
 		log.Fatalf("Failed to initialize: %s", err.Error())
 	}
 
-	h := handlers.NewHandler(storage)
+	Service := service.NewService(storage)
+	logic := usecase.New(Service)
+	h := handlers.NewHandler(logic)
 
 	public := r.Group("/")
 	routes.PublicRoutes(public, *h)

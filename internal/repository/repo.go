@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"devtool/internal/globals"
 	"devtool/internal/storage"
 	dbstorage "devtool/internal/storage/db"
 	filestorage "devtool/internal/storage/file"
@@ -34,8 +33,6 @@ func New(cfg *Config) (*Repository, error) {
 	if cfg == nil {
 		panic("конфигурация задана некорректно")
 	}
-
-	globals.SaveAfter = cfg.SaveAfter
 
 	ms := make(map[string]float64)
 	repo := &Repository{

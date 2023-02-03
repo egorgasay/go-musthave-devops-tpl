@@ -3,7 +3,6 @@ package handlers
 import (
 	"devtool/internal/usecase"
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -87,13 +86,7 @@ func (h Handler) GetMetricHandler(c *gin.Context) {
 }
 
 func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
-	b, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	b, err = h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
+	b, err := h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
 	if err != nil {
 		c.Error(err)
 		c.AbortWithStatus(http.StatusInternalServerError)

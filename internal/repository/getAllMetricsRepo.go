@@ -9,10 +9,9 @@ func (r *Repository) GetAllMetrics() ([]*storage.Metrics, error) {
 	metrics := make([]*storage.Metrics, 0, len(r.Store))
 
 	for key, value := range r.Store {
-		val := value
 		metric := &storage.Metrics{
 			ID:    key,
-			Value: &val,
+			Value: value,
 		}
 
 		metrics = append(metrics, metric)

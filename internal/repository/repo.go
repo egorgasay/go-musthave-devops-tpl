@@ -18,11 +18,6 @@ type Config struct {
 	Restore        bool
 }
 
-//type Repository struct {
-//	RAMStorage storage.IStorage
-//	BackupStorage storage.IBackupStorage
-//}
-
 type Repository struct {
 	Mu            sync.RWMutex
 	Store         map[string]float64

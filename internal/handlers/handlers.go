@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"devtool/config"
+	"devtool/internal/storage"
 	"devtool/internal/usecase"
 	"errors"
+	"github.com/goccy/go-json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,10 +16,11 @@ import (
 
 type Handler struct {
 	logic usecase.UseCase
+	conf  *config.Config
 }
 
-func NewHandler(logic usecase.UseCase) *Handler {
-	return &Handler{logic: logic}
+func NewHandler(logic usecase.UseCase, conf *config.Config) *Handler {
+	return &Handler{logic: logic, conf: conf}
 }
 
 func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
@@ -25,6 +30,23 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 
 		return
+	}
+
+	var metric storage.Metrics
+	err = json.Unmarshal(b, &metric)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	//log.Println(string(b))
+
+	isValid := checkCookies(metric.Hash, metric, []byte(h.conf.Key))
+	if h.conf.Key != "" {
+		if !isValid {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
 	}
 
 	byteJSON, err := h.logic.UpdateMetricByJSON(b)
@@ -65,6 +87,13 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 	}
 	name := c.Param("name")
 
+	//var metric = storage.Metrics{
+	//	ID:    name,
+	//	MType: metricType,
+	//	Delta: int64(val),
+	//	Value: val,
+	//}
+
 	err = h.logic.UpdateMetric(val, metricType, name)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
@@ -94,6 +123,7 @@ func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
 		return
 	}
 
+	log.Println(string(b))
 	outputJSON, err := h.logic.GetMetricByJSON(b)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {

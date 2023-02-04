@@ -21,7 +21,7 @@ func (uc UseCase) UseGzip(body io.Reader, contentType string) (data []byte, err 
 	}
 
 	if len(string(data)) < 3 {
-		return nil, errors.New("недопустимый URL")
+		return nil, errors.New("wrong data")
 	}
 
 	return data, nil

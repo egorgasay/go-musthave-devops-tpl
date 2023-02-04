@@ -57,7 +57,7 @@ func main() {
 
 	Service := service.NewService(storage)
 	logic := usecase.New(Service)
-	h := handlers.NewHandler(logic)
+	h := handlers.NewHandler(logic, cfg)
 
 	r.Use(gzip.Gzip(gzip.BestSpeed))
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -14,34 +16,29 @@ import (
 	"time"
 )
 
-// var metrics = []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys", "HeapAlloc",
-// 	"HeapIdle", "HeapInuse", "HeapReleased", "HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
-// 	"MSpanInuse", "MSpanSys", "Mallocs", "NextGC", "NumForcedGC", "NumGC", "OtherSys", "PauseTotalNs",
-// 	"PollCount", "RandomValue", "StackInuse", "StackSys", "Sys", "TotalAlloc"}
-
 var (
 	pollInterval   time.Duration
 	baseURL        string
+	secretKey      *string
 	reportInterval time.Duration
 )
 
 func init() {
+	secretKey = flag.String("k", "", "-k=key")
 	flag.StringVar(&baseURL, "a", "localhost:8080/", "-a=host")
 	flag.DurationVar(&pollInterval, "p", 2*time.Second, "-p=Seconds")
 	flag.DurationVar(&reportInterval, "r", 10*time.Second, "-r=Seconds")
 }
-
-//var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
 
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
 }
 
 func main() {
-	//startReport := time.Now()
 	flag.Parse()
 	signalChanel := make(chan os.Signal, 1)
 
@@ -54,6 +51,10 @@ func main() {
 		if err == nil {
 			reportInterval = time.Duration(sec) * time.Second
 		}
+	}
+
+	if key, ok := os.LookupEnv("KEY"); ok {
+		secretKey = &key
 	}
 
 	if pollInterv, ok := os.LookupEnv("POLL_INTERVAL"); ok {
@@ -127,20 +128,35 @@ func Refresh(metrics chan []*resty.Request) {
 
 func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []*resty.Request {
 	cli := resty.New().SetBaseURL("http://" + baseURL)
-	cli.RetryCount = 2
+	cli.RetryCount = 3
 	cli.RetryWaitTime = time.Duration(10) * time.Second
 	cli.RetryMaxWaitTime = time.Duration(90) * time.Second
 	var mt Metrics
+
+	mt.ID = id
 	if mtype == "gauge" {
 		mt.MType = "gauge"
 		mt.Value = &val
+
+		if *secretKey != "" {
+			src := []byte(fmt.Sprintf("%s:gauge:%f", mt.ID, *mt.Value))
+			mt.Hash = NewCookie([]byte(*secretKey), src)
+			log.Printf("Generated!!!!:%s:%s\n", src, mt.Hash)
+			cli.SetHeader("hash", mt.Hash)
+		}
 	} else if mtype == "counter" {
 		mt.MType = "counter"
 		delta := int64(val)
 		mt.Delta = &delta
+
+		if *secretKey != "" {
+			src := []byte(fmt.Sprintf("%s:counter:%d", mt.ID, *mt.Delta))
+			mt.Hash = NewCookie([]byte(*secretKey), src)
+			log.Printf("Generated!!!!:%s:%s\n", src, mt.Hash)
+			cli.SetHeader("hash", mt.Hash)
+		}
 	}
 
-	mt.ID = id
 	req := cli.R().SetHeader("Content-Type", "application/json").SetBody(&mt)
 	requests = append(requests, req)
 	return requests
@@ -151,4 +167,11 @@ func doRequest(requests []*resty.Request) {
 	for _, req := range requests {
 		go req.Post("update/")
 	}
+}
+
+func NewCookie(key []byte, src []byte) string {
+	h := hmac.New(sha256.New, key)
+	h.Write(src)
+
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

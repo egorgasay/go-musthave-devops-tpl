@@ -31,7 +31,7 @@ func (fs *FileStorage) GetAllMetrics() ([]*storage.Metrics, error) {
 		}
 		metric := &storage.Metrics{
 			ID:    metricName,
-			Value: &val,
+			Value: val,
 		}
 
 		metrics = append(metrics, metric)

@@ -19,10 +19,9 @@ func (uc UseCase) UpdateMetricByJSON(b []byte) ([]byte, error) {
 	}
 
 	if metrics.MType == "gauge" {
-		metrics.Value = &count
+		metrics.Value = count
 	} else {
-		delta := int64(count)
-		metrics.Delta = &delta
+		metrics.Delta = int64(count)
 	}
 
 	metrics.UpdateNeeded = true
@@ -43,14 +42,13 @@ func (uc UseCase) UpdateMetric(val float64, metricType string, name string) erro
 		mt = &storage.Metrics{
 			ID:    name,
 			MType: metricType,
-			Value: &val,
+			Value: val,
 		}
 	case "counter":
-		delta := int64(val)
 		mt = &storage.Metrics{
 			ID:    name,
 			MType: metricType,
-			Delta: &delta,
+			Delta: int64(val),
 		}
 	}
 

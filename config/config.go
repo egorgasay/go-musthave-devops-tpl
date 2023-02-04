@@ -70,7 +70,7 @@ func New() *Config {
 	return &Config{
 		Host: *f.host,
 		DBConfig: &repository.Config{
-			DriverName:     "file",        // выбор между sqlite3, file
+			DriverName:     "sqlite3",     // выбор между sqlite3, file
 			DataSourceName: *f.path,       // путь до файла или данные бд
 			SaveAfter:      storeInterval, // через сколько секунд изменения будут записываться
 			Restore:        *f.restore,    // восстанавливать ли предыдущие значения

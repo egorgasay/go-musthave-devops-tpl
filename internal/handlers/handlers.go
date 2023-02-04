@@ -6,6 +6,7 @@ import (
 	"devtool/internal/usecase"
 	"errors"
 	"github.com/goccy/go-json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -122,6 +123,7 @@ func (h Handler) GetMetricByJSONHandler(c *gin.Context) {
 		return
 	}
 
+	log.Println(string(b))
 	outputJSON, err := h.logic.GetMetricByJSON(b)
 	if err != nil {
 		if errors.Is(err, usecase.ErrNotFound) {

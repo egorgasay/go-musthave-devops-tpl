@@ -4,17 +4,16 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"devtool/internal/storage"
-	"encoding/hex"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"strings"
+	"log"
 )
 
-func newCookie(key []byte, src []byte) string {
+func NewCookie(key []byte, src []byte) string {
 	h := hmac.New(sha256.New, key)
 	h.Write(src)
 
-	return hex.EncodeToString(h.Sum(nil)) + "-" + hex.EncodeToString(src)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func getCookies(c *gin.Context) (cookie string, err error) {
@@ -31,33 +30,32 @@ func getCookies(c *gin.Context) (cookie string, err error) {
 
 func setCookies(c *gin.Context, key []byte, metric storage.Metrics) (cookie string) {
 	if metric.MType == "gauge" {
-		src := []byte(fmt.Sprintf("%s:counter:%d", metric.ID, metric.Delta))
-		cookie = newCookie(key, src)
+		src := []byte(fmt.Sprintf("%s:counter:%f", metric.ID, metric.Value))
+		cookie = NewCookie(key, src)
 	} else if metric.MType == "counter" {
-		src := []byte(fmt.Sprintf("%s:gauge:%f", metric.ID, *metric.Value))
-		cookie = newCookie(key, src)
+		src := []byte(fmt.Sprintf("%s:gauge:%d", metric.ID, metric.Delta))
+		cookie = NewCookie(key, src)
 	}
 	c.Header("hash", cookie)
 
 	return cookie
 }
 
-func checkCookies(cookie string, key []byte) bool {
-	arr := strings.Split(cookie, "-")
-	k, v := arr[0], arr[1]
-
-	sign, err := hex.DecodeString(k)
-	if err != nil {
-		return false
+func getSrc(mt storage.Metrics, key []byte) string {
+	if mt.MType == "gauge" {
+		src := []byte(fmt.Sprintf("%s:gauge:%f", mt.ID, mt.Value))
+		nc := NewCookie(key, src)
+		log.Printf("Generated!!!!:%s:%s:new %s\n", src, mt.Hash, nc)
+		return nc
+	} else if mt.MType == "counter" {
+		src := []byte(fmt.Sprintf("%s:counter:%d", mt.ID, mt.Delta))
+		return NewCookie(key, src)
 	}
 
-	data, err := hex.DecodeString(v)
-	if err != nil {
-		return false
-	}
+	return ""
+}
 
-	h := hmac.New(sha256.New, key)
-	h.Write(data)
-
-	return hmac.Equal(sign, h.Sum(nil))
+func checkCookies(cookie string, metric storage.Metrics, key []byte) bool {
+	cookie2 := getSrc(metric, key)
+	return cookie2 == cookie
 }

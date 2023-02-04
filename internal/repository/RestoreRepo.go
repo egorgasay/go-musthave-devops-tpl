@@ -18,7 +18,7 @@ func (r *Repository) Restore() (err error) {
 	}
 
 	for _, metric := range metrics {
-		r.Store[metric.ID] = *metric.Value
+		r.Store[metric.ID] = metric.Value
 	}
 
 	return nil

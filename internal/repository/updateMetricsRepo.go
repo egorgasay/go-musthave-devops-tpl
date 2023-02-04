@@ -12,9 +12,9 @@ func (r *Repository) UpdateMetric(mt *storage.Metrics) (count float64, err error
 	defer r.Mu.Unlock()
 
 	if mt.MType == "gauge" {
-		r.Store[mt.ID] = *mt.Value
+		r.Store[mt.ID] = mt.Value
 	} else if mt.MType == "counter" {
-		r.Store[mt.ID] = float64(*mt.Delta) + r.Store[mt.ID]
+		r.Store[mt.ID] = float64(mt.Delta) + r.Store[mt.ID]
 	} else {
 		return 0, errors.New("unsupported metric type")
 	}

@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Host     string
 	DBConfig *repository.Config
-	Key      []byte
+	Key      string
 }
 
 type F struct {
@@ -75,6 +75,6 @@ func New() *Config {
 			SaveAfter:      storeInterval, // через сколько секунд изменения будут записываться
 			Restore:        *f.restore,    // восстанавливать ли предыдущие значения
 		},
-		Key: []byte(*f.key),
+		Key: *f.key,
 	}
 }

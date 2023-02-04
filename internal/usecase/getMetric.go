@@ -30,10 +30,9 @@ func (uc UseCase) GetMetricByJSON(b []byte) ([]byte, error) {
 	}
 
 	if metric.MType == "gauge" {
-		metric.Value = &val
+		metric.Value = val
 	} else if metric.MType == "counter" {
-		delta := int64(val)
-		metric.Delta = &delta
+		metric.Delta = int64(val)
 	} else {
 		return nil, errors.New("not implemented")
 	}

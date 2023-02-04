@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"devtool/config"
 	"devtool/internal/usecase"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +14,7 @@ import (
 
 type Handler struct {
 	logic usecase.UseCase
+	conf  config.Config
 }
 
 func NewHandler(logic usecase.UseCase) *Handler {
@@ -19,6 +22,19 @@ func NewHandler(logic usecase.UseCase) *Handler {
 }
 
 func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
+	cookie, err := getCookies(c)
+	if len(h.conf.Key) > 1 {
+		if !checkCookies(cookie, h.conf.Key) {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err != nil || !checkCookies(cookie, h.conf.Key) {
+		log.Println("Setting new cookies...")
+		setCookies(c, h.conf.Key)
+	}
+
 	b, err := h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
 	if err != nil {
 		c.Error(err)

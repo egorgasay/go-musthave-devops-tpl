@@ -21,14 +21,16 @@ import (
 
 var (
 	pollInterval   time.Duration
-	baseURL        string
 	reportInterval time.Duration
+	baseURL        string
+	secretKey      string
 )
 
 func init() {
 	flag.StringVar(&baseURL, "a", "localhost:8080/", "-a=host")
 	flag.DurationVar(&pollInterval, "p", 2*time.Second, "-p=Seconds")
 	flag.DurationVar(&reportInterval, "r", 10*time.Second, "-r=Seconds")
+	flag.StringVar(&secretKey, "k", "", "-k=key")
 }
 
 //var ticker = time.NewTicker(reportInterval) //make(chan int, 29)
@@ -41,7 +43,6 @@ type Metrics struct {
 }
 
 func main() {
-	//startReport := time.Now()
 	flag.Parse()
 	signalChanel := make(chan os.Signal, 1)
 
@@ -61,6 +62,10 @@ func main() {
 		if err == nil {
 			pollInterval = time.Duration(sec) * time.Second
 		}
+	}
+
+	if key, ok := os.LookupEnv("KEY"); ok {
+		secretKey = key
 	}
 
 	fmt.Println(pollInterval, reportInterval, baseURL)
@@ -130,6 +135,11 @@ func makeNewRequest(mtype, id string, val float64, requests []*resty.Request) []
 	cli.RetryCount = 2
 	cli.RetryWaitTime = time.Duration(10) * time.Second
 	cli.RetryMaxWaitTime = time.Duration(90) * time.Second
+
+	if secretKey != "" {
+		cli.SetHeader("hash", secretKey)
+	}
+
 	var mt Metrics
 	if mtype == "gauge" {
 		mt.MType = "gauge"

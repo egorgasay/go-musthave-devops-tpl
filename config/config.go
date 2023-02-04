@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Host     string
 	DBConfig *repository.Config
+	Key      []byte
 }
 
 type F struct {
@@ -18,6 +19,7 @@ type F struct {
 	path      *string
 	saveAfter *string
 	restore   *bool
+	key       *string
 }
 
 var f F
@@ -27,6 +29,7 @@ func init() {
 	f.saveAfter = flag.String("i", "5m", "-i=Seconds")
 	f.path = flag.String("f", "/tmp/devops-metrics-db.json", "-f=path")
 	f.restore = flag.Bool("r", true, "-r=restore")
+	f.key = flag.String("k", "", "-k=key")
 }
 
 var True = true
@@ -50,6 +53,10 @@ func New() *Config {
 		f.saveAfter = &saveAfterEnv
 	}
 
+	if key, ok := os.LookupEnv("KEY"); ok {
+		f.key = &key
+	}
+
 	storeInterval, err := time.ParseDuration(*f.saveAfter)
 	if err != nil {
 		log.Println(err)
@@ -68,5 +75,6 @@ func New() *Config {
 			SaveAfter:      storeInterval, // через сколько секунд изменения будут записываться
 			Restore:        *f.restore,    // восстанавливать ли предыдущие значения
 		},
+		Key: []byte(*f.key),
 	}
 }

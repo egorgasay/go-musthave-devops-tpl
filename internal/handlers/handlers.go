@@ -59,6 +59,14 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 }
 
 func (h Handler) UpdateMetricHandler(c *gin.Context) {
+	cookie, err := getCookies(c)
+	if len(h.conf.Key) > 1 {
+		if !checkCookies(cookie, h.conf.Key) {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+	}
+
 	valStr := c.Param("value")
 	if valStr == "" {
 		c.AbortWithStatus(http.StatusBadRequest)

@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"devtool/config"
+	"devtool/internal/storage"
 	"devtool/internal/usecase"
 	"errors"
+	"github.com/goccy/go-json"
 	"log"
 	"net/http"
 	"strconv"
@@ -22,6 +24,14 @@ func NewHandler(logic usecase.UseCase) *Handler {
 }
 
 func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
+	b, err := h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
+	if err != nil {
+		c.Error(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
 	cookie, err := getCookies(c)
 	if len(h.conf.Key) > 1 {
 		if !checkCookies(cookie, h.conf.Key) {
@@ -31,16 +41,14 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 	}
 
 	if err != nil || !checkCookies(cookie, h.conf.Key) {
+		var metric storage.Metrics
+		err = json.Unmarshal(b, &metric)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 		log.Println("Setting new cookies...")
-		setCookies(c, h.conf.Key)
-	}
-
-	b, err := h.logic.UseGzip(c.Request.Body, c.Request.Header.Get("Content-Type"))
-	if err != nil {
-		c.Error(err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-
-		return
+		setCookies(c, h.conf.Key, metric)
 	}
 
 	byteJSON, err := h.logic.UpdateMetricByJSON(b)
@@ -59,14 +67,6 @@ func (h Handler) UpdateMetricByJSONHandler(c *gin.Context) {
 }
 
 func (h Handler) UpdateMetricHandler(c *gin.Context) {
-	cookie, err := getCookies(c)
-	if len(h.conf.Key) > 1 {
-		if !checkCookies(cookie, h.conf.Key) {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-	}
-
 	valStr := c.Param("value")
 	if valStr == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -88,6 +88,27 @@ func (h Handler) UpdateMetricHandler(c *gin.Context) {
 		return
 	}
 	name := c.Param("name")
+
+	valInt := int64(val)
+	var metric = storage.Metrics{
+		ID:    name,
+		MType: metricType,
+		Delta: &valInt,
+		Value: &val,
+	}
+
+	cookie, err := getCookies(c)
+	if len(h.conf.Key) > 1 {
+		if !checkCookies(cookie, h.conf.Key) {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err != nil || !checkCookies(cookie, h.conf.Key) {
+		log.Println("Setting new cookies...")
+		setCookies(c, h.conf.Key, metric)
+	}
 
 	err = h.logic.UpdateMetric(val, metricType, name)
 	if err != nil {

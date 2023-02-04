@@ -3,16 +3,15 @@ package handlers
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"devtool/internal/storage"
 	"encoding/hex"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"strings"
-	"time"
 )
 
-func newCookie(key []byte) string {
+func newCookie(key []byte, src []byte) string {
 	h := hmac.New(sha256.New, key)
-	src := []byte(fmt.Sprint(time.Now().UnixNano()))
 	h.Write(src)
 
 	return hex.EncodeToString(h.Sum(nil)) + "-" + hex.EncodeToString(src)
@@ -30,8 +29,14 @@ func getCookies(c *gin.Context) (cookie string, err error) {
 	return cookie, nil
 }
 
-func setCookies(c *gin.Context, key []byte) (cookie string) {
-	cookie = newCookie(key)
+func setCookies(c *gin.Context, key []byte, metric storage.Metrics) (cookie string) {
+	if metric.MType == "gauge" {
+		src := []byte(fmt.Sprintf("%s:counter:%d", metric.ID, metric.Delta))
+		cookie = newCookie(key, src)
+	} else if metric.MType == "counter" {
+		src := []byte(fmt.Sprintf("%s:gauge:%f", metric.ID, *metric.Value))
+		cookie = newCookie(key, src)
+	}
 	c.Header("hash", cookie)
 
 	return cookie
